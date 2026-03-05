@@ -9,7 +9,6 @@ _code_1 = """
         addi s1 s0 -32
 """
 
-# TODO: Tests framework
 code_1 = AssemblyConverter().convert(_code_1)
 
 

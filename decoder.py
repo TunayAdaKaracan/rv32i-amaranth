@@ -80,6 +80,7 @@ class Decoder(wiring.Component):
 def test():
     top = Decoder()
 
+    # TODO: Testing Framework
     async def bench(ctx):
         for instr in code_1:
             print(f"Emulating instruction {instr}")
