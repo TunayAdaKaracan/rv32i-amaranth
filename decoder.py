@@ -73,8 +73,59 @@ class Decoder(wiring.Component):
             self.funct7.eq(self.instruction[25:32])
         ]
 
-        # TODO: Immediate decoding
-        m.d.comb += self.immediate.eq(0)
+        # Define immediates to be used later
+        # No Rimm as R-Type instructions do not contain immediate values
+        Iimm = Signal(32)
+        Simm = Signal(32)
+        Bimm = Signal(32)
+        Uimm = Signal(32)
+        Jimm = Signal(32)
+        m.d.comb += [
+            Iimm.eq(Cat(self.instruction[20:32], self.instruction[31].replicate(20))),
+
+            Simm.eq(Cat(self.instruction[7:12], self.instruction[25:32], self.instruction[31].replicate(20))),
+            
+            Bimm.eq(Cat(Const(0), self.instruction[8:12], self.instruction[25:31], self.instruction[7], self.instruction[31].replicate(20))),
+            
+            Uimm.eq(Cat(Const(0).replicate(12), self.instruction[12:32])),
+
+            Jimm.eq(Cat(Const(0), self.instruction[21:31], self.instruction[20], self.instruction[12:20], self.instruction[31].replicate(12)))
+        ]
+
+        with m.Switch(opcode):
+            # Maps to OpCodes.LUI and OpCodes.AUIPC
+            with m.Case("0-10111"):
+                m.d.comb += self.immediate.eq(Uimm)
+
+            with m.Case(OpCodes.JAL):
+                m.d.comb += self.immediate.eq(Jimm)
+
+            with m.Case(OpCodes.JALR):
+                m.d.comb += self.immediate.eq(Iimm)
+
+            with m.Case(OpCodes.BRANCH):
+                m.d.comb += self.immediate.eq(Bimm)
+
+            with m.Case(OpCodes.LOAD):
+                m.d.comb += self.immediate.eq(Iimm)
+
+            with m.Case(OpCodes.STORE):
+                m.d.comb += self.immediate.eq(Simm)
+
+            with m.Case(OpCodes.ALU_I):
+                m.d.comb += self.immediate.eq(Iimm)
+
+            # Set immediate output to 0 if R-Type
+            with m.Case(OpCodes.ALU_R):
+                m.d.comb += self.immediate.eq(0)
+
+            with m.Case(OpCodes.FENCE):
+                m.d.comb += self.immediate.eq(Iimm)
+
+            # System instructions do not contain immediate
+            with m.Case(OpCodes.SYSTEM):
+                m.d.comb += self.immediate.eq(0)
+                
         return m
 
 def test():
