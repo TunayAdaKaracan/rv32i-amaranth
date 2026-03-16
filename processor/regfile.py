@@ -21,12 +21,12 @@ class RegisterFile(wiring.Component):
     rs2_data:       wiring.Out(32)
 
     def __init__(self):
-        self.regs = Memory(shape=32, depth=32, init=[])
+        self.regs       = Memory(shape=32, depth=32, init=[])
 
-        self.rd_port = self.regs.write_port()
+        self.rd_port    = self.regs.write_port()
 
-        self.rs1_port = self.regs.read_port(transparent_for=(self.rd_port,))
-        self.rs2_port = self.regs.read_port(transparent_for=(self.rd_port,))
+        self.rs1_port   = self.regs.read_port(transparent_for=(self.rd_port,))
+        self.rs2_port   = self.regs.read_port(transparent_for=(self.rd_port,))
 
         super().__init__()
     

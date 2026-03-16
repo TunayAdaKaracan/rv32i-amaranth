@@ -1,10 +1,8 @@
 # pyright: reportInvalidTypeForm=false
 
 from isa import OpCodes
-from test_helpers.decoder_test_codes import code_1
 
 from amaranth import *
-from amaranth.sim import Period, Simulator
 from amaranth.lib import wiring
 
 
@@ -33,8 +31,8 @@ class Decoder(wiring.Component):
     load:           wiring.Out(1)
     store:          wiring.Out(1)
 
+    alu_op:         wiring.Out(1)
     alu_op_i:       wiring.Out(1)
-    alu_op_r:       wiring.Out(1)
 
     fence:          wiring.Out(1)
     system:         wiring.Out(1)
@@ -57,7 +55,7 @@ class Decoder(wiring.Component):
             self.load.eq(opcode     == OpCodes.LOAD),
             self.store.eq(opcode    == OpCodes.STORE),
             self.alu_op_i.eq(opcode == OpCodes.ALU_I),
-            self.alu_op_r.eq(opcode == OpCodes.ALU_R),
+            self.alu_op.eq((opcode  == OpCodes.ALU_R) | (opcode == OpCodes.ALU_I)),
             self.fence.eq(opcode    == OpCodes.FENCE),
             self.system.eq(opcode   == OpCodes.SYSTEM)
         ]
@@ -127,23 +125,3 @@ class Decoder(wiring.Component):
                 m.d.comb += self.immediate.eq(0)
                 
         return m
-
-def test():
-    top = Decoder()
-
-    # TODO: Testing Framework
-    async def bench(ctx):
-        for instr in code_1:
-            print(f"Emulating instruction {instr}")
-            ctx.set(top.instruction, int(instr, base=2))
-            await ctx.delay(Period(us=2))
-    
-
-    sim = Simulator(top)
-    sim.add_testbench(bench)
-
-    with sim.write_vcd("sim_output/decoder.vcd"):
-        sim.run()
-
-if __name__ == "__main__":
-    test()

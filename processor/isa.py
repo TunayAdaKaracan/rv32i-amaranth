@@ -1,3 +1,4 @@
+from enum import IntEnum
 # Instruction Types:
 
 # R-Type: rd = rs1 OP rs2
@@ -18,7 +19,7 @@
 # J-Type:
 # Imm[20|10:1|11|19:12]                       | rd[5]       | opcode[7]
 
-class OpCodes:
+class OpCodes(IntEnum):
     LUI     = 0b0110111 # U-Type -> Load Upper Immediate
     AUIPC   = 0b0010111 # U-Type -> Add Upper Immediate to PC
 
@@ -84,3 +85,28 @@ class OpCodes:
     SYSTEM  = 0b1110011 # Grouping
     ECALL   = 0b1110011
     EBREAK  = 0b1110011
+
+class AluOp(IntEnum):
+    ADD     = 0b000
+    SUB     = 0b000
+    SLL     = 0b001
+    SLT     = 0b010
+    SLTU    = 0b011
+    XOR     = 0b100
+    SRL     = 0b101
+    SRA     = 0b101
+    OR      = 0b110
+    AND     = 0b111
+
+class AluOpFunct(IntEnum):
+    # funct7[5] | AluOp
+    ADD     = 0b0_000
+    SUB     = 0b1_000
+    SLL     = 0b0_001
+    SLT     = 0b0_010
+    SLTU    = 0b0_011
+    XOR     = 0b0_100
+    SRL     = 0b0_101
+    SRA     = 0b1_101
+    OR      = 0b0_110
+    AND     = 0b0_111
