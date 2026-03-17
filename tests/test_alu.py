@@ -101,7 +101,6 @@ def alu_tests(do_random: bool = True, return_at_first_error: bool = True):
     def create_bench(test, err: dict):
         top = ALU()
         sim = Simulator(top)
-        sim.add_clock(1e-6)
         
         async def bench(ctx: SimulatorContext):
             ctx.set(top.value1, test[1])
