@@ -7,6 +7,7 @@ from .wishbone import WishboneSignature
 from amaranth.lib.memory import Memory
 
 
+# TODO: Check out wishbone spec
 class WishboneMemory(wiring.Component):
     bus:    wiring.In(WishboneSignature(address_width=32, data_width=32, granularity=8))
     

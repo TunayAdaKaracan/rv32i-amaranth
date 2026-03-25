@@ -17,3 +17,5 @@ class WishboneSignature(wiring.Signature):
             "we":       Out(1),
             "ack":      In(1)
         })
+
+# TODO: Decoder

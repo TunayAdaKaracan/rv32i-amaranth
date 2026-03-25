@@ -105,6 +105,8 @@ class CPU(wiring.Component):
         m.d.comb += [
             regfile.rs_re.eq(fsm.ongoing == ExecutionStage.FETCH_REGISTERS),
         ]
+
+        # TODO
         
         return m
 
