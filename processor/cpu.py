@@ -88,8 +88,7 @@ class CPU(wiring.Component):
                 m.d.comb += takeBranch.eq(rs1.as_unsigned() < rs2.as_unsigned())
             with m.Case(Branch.BGEU):
                 m.d.comb += takeBranch.eq(rs1.as_unsigned() >= rs2.as_unsigned())
-            # Defaulted to 0
-            with m.Case("---"):
+            with m.Case("---"): # Defaulted to 0
                 m.d.comb += takeBranch.eq(0)
 
         nextPC = Signal(32)
