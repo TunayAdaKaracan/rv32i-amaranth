@@ -22,6 +22,7 @@ class ExecutionStage:
 
 class CPU(wiring.Component):
     bus: wiring.Out(WishboneSignature(address_width=32, data_width=32, granularity=8))
+
     def __init__(self, code=[]):
         
         self.regs       = RegisterFile()
@@ -29,9 +30,9 @@ class CPU(wiring.Component):
         self.alu        = ALU()
         self.memory     = WishboneMemory(size=1024, init=code) # 1024 words of memory
         
-        super().__init__({})
+        super().__init__()
     
-    def elaborate(self):
+    def elaborate(self, platform):
         m = Module()
 
         m.submodules.decoder    = decoder   = self.decoder
@@ -92,20 +93,17 @@ class CPU(wiring.Component):
                 m.d.comb += takeBranch.eq(0)
 
         nextPC = Signal(32)
-        m.d.comb += [
-            nextPC.eq(Mux(
-                (decoder.branch & takeBranch) | decoder.jal, PC + decoder.immediate,
-                Mux(
-                    decoder.jalr, rs1 + decoder.immediate,
-                    PC + 4
-                )
-            ))
-        ]
-
+        with m.If((decoder.branch & takeBranch) | decoder.jal):
+            m.d.comb += nextPC.eq(PC + decoder.immediate)
+        with m.Elif(decoder.jalr):
+            m.d.comb += nextPC.eq(rs1 + decoder.immediate)
+        with m.Else():
+            m.d.comb += nextPC.eq(PC + 4)
 
         load_data   = Signal(32)
         store_data  = Signal(32)
 
+        # TODO: Fix wishbone bus transactions
         with m.FSM(reset=ExecutionStage.FETCH_INSTRUCTION) as fsm:
             # Set addresses to fetch the instruction
             with m.State(ExecutionStage.FETCH_INSTRUCTION):
@@ -115,7 +113,6 @@ class CPU(wiring.Component):
                     self.bus.sel    .eq(0b1111),
                     self.bus.cyc    .eq(1),
                     self.bus.stb    .eq(1),
-                    self.bus.we     .eq(1)
                 ]
                 with m.If(self.bus.ack):
                     m.d.sync += instruction.eq(self.bus.data_r)
@@ -146,13 +143,12 @@ class CPU(wiring.Component):
             with m.State(ExecutionStage.LOAD):
                 m.d.comb += [
                     self.bus.addr   .eq(rs1 + decoder.immediate),
-                    self.bus.sel    .eq(1111), # TODO: Sel
+                    self.bus.sel    .eq(0b1111), # TODO: Sel
                     self.bus.cyc    .eq(1),
                     self.bus.stb    .eq(1),
-                    self.bus.we     .eq(0)
                 ]
 
-                with m.If(self.buc.ack):
+                with m.If(self.bus.ack):
                     m.d.sync += load_data.eq(
                         #TODO: Load
                     )
@@ -167,36 +163,30 @@ class CPU(wiring.Component):
         writeback_en    = Signal(1)
         writeback_data  = Signal(32)
 
-        m.d.comb += [
-            writeback_en.eq(
-                (
-                    (fsm.ongoing == ExecutionStage.EXECUTE) | 
-                    (fsm.ongoing == ExecutionStage.LOAD)
-                ) & (
-                    decoder.alu_op | 
-                    decoder.alu_op_i | 
-                    decoder.jal | 
-                    decoder.jalr |
-                    decoder.lui |
-                    decoder.auipc |
-                    decoder.load
-                )
-            ),
-            writeback_data.eq(
-                Mux(decoder.load, load_data,
-                    Mux(
-                        (decoder.jal | decoder.jalr), PC + 4,
-                        Mux(
-                            decoder.lui, decoder.immediate,
-                            Mux(
-                                decoder.auipc, PC + decoder.immediate,
-                                alu.result
-                            )
-                        )
-                    )
-                )
+        m.d.comb += writeback_en.eq(
+            (
+                (fsm.ongoing == ExecutionStage.EXECUTE) | 
+                (fsm.ongoing == ExecutionStage.LOAD)
+            ) & (
+                decoder.alu_op | 
+                decoder.jal | 
+                decoder.jalr |
+                decoder.lui |
+                decoder.auipc |
+                decoder.load
             )
-        ]
+        )
+
+        with m.If(decoder.load):
+            m.d.comb += writeback_data.eq(load_data)
+        with m.Elif(decoder.jal | decoder.jalr):
+            m.d.comb += writeback_data.eq(PC + 4)
+        with m.Elif(decoder.lui):
+            m.d.comb += writeback_data.eq(decoder.immediate)
+        with m.Elif(decoder.auipc):
+            m.d.comb += writeback_data.eq(PC + decoder.immediate)
+        with m.Else():
+            m.d.comb += writeback_data.eq(alu.result)
 
         m.d.comb += [
             regfile.rs_re   .eq(fsm.ongoing == ExecutionStage.FETCH_REGISTERS),

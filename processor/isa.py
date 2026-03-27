@@ -101,6 +101,11 @@ class Load(IntEnum):
     LBU     = 0b100
     LHU     = 0b101
 
+class Store(IntEnum):
+    SB      = 0b000
+    SH      = 0b001
+    SW      = 0b010
+
 class AluOp(IntEnum):
     ADD     = 0b000
     SUB     = 0b000

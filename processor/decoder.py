@@ -1,10 +1,9 @@
 # pyright: reportInvalidTypeForm=false
 
-from isa import OpCodes
-
 from amaranth import *
 from amaranth.lib import wiring
 
+from .isa import OpCodes
 
 class Decoder(wiring.Component):
     # Inputs
@@ -31,7 +30,8 @@ class Decoder(wiring.Component):
     load:           wiring.Out(1)
     store:          wiring.Out(1)
 
-    alu_op:         wiring.Out(1)
+    alu_op:         wiring.Out(1) # Corresponds to alu_op_r OR alu_op_i
+    alu_op_r:       wiring.Out(1)
     alu_op_i:       wiring.Out(1)
 
     fence:          wiring.Out(1)
@@ -47,17 +47,18 @@ class Decoder(wiring.Component):
         m.d.comb += opcode.eq(self.instruction[0:7])
 
         m.d.comb += [
-            self.lui.eq(opcode      == OpCodes.LUI),
-            self.auipc.eq(opcode    == OpCodes.AUIPC),
-            self.jal.eq(opcode      == OpCodes.JAL),
-            self.jalr.eq(opcode     == OpCodes.JALR),
-            self.branch.eq(opcode   == OpCodes.BRANCH),
-            self.load.eq(opcode     == OpCodes.LOAD),
-            self.store.eq(opcode    == OpCodes.STORE),
-            self.alu_op_i.eq(opcode == OpCodes.ALU_I),
-            self.alu_op.eq((opcode  == OpCodes.ALU_R) | (opcode == OpCodes.ALU_I)),
-            self.fence.eq(opcode    == OpCodes.FENCE),
-            self.system.eq(opcode   == OpCodes.SYSTEM)
+            self.lui        .eq(opcode == OpCodes.LUI),
+            self.auipc      .eq(opcode == OpCodes.AUIPC),
+            self.jal        .eq(opcode == OpCodes.JAL),
+            self.jalr       .eq(opcode == OpCodes.JALR),
+            self.branch     .eq(opcode == OpCodes.BRANCH),
+            self.load       .eq(opcode == OpCodes.LOAD),
+            self.store      .eq(opcode == OpCodes.STORE),
+            self.alu_op_i   .eq(opcode == OpCodes.ALU_I),
+            self.alu_op_r   .eq(opcode == OpCodes.ALU_R),
+            self.alu_op     .eq(self.alu_op_r | self.alu_op_i),
+            self.fence      .eq(opcode == OpCodes.FENCE),
+            self.system     .eq(opcode == OpCodes.SYSTEM)
         ]
 
         m.d.comb += [
@@ -120,8 +121,7 @@ class Decoder(wiring.Component):
             with m.Case(OpCodes.FENCE):
                 m.d.comb += self.immediate.eq(Iimm)
 
-            # System instructions do not contain immediate
             with m.Case(OpCodes.SYSTEM):
-                m.d.comb += self.immediate.eq(0)
+                m.d.comb += self.immediate.eq(Iimm)
                 
         return m

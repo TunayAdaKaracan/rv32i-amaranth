@@ -2,12 +2,12 @@
 
 from amaranth import *
 from amaranth.lib import wiring
-
-from .wishbone import WishboneSignature
 from amaranth.lib.memory import Memory
 
+from .wishbone import WishboneSignature
 
-# TODO: Check out wishbone spec
+
+# TODO: See wishbone spec and make the bus transaction properly in CPU
 class WishboneMemory(wiring.Component):
     bus:    wiring.In(WishboneSignature(address_width=32, data_width=32, granularity=8))
     
@@ -17,7 +17,7 @@ class WishboneMemory(wiring.Component):
         self.read   = self.memory.read_port()
         super().__init__()
 
-    def elaborate(self):
+    def elaborate(self, platform):
         m = Module()
         m.submodules.memory = self.memory
 

@@ -2,7 +2,6 @@
 
 from amaranth import *
 from amaranth.lib import wiring
-from amaranth.sim import Simulator, SimulatorContext
 from amaranth.lib.memory import Memory
 
 
@@ -53,29 +52,3 @@ class RegisterFile(wiring.Component):
         ]
 
         return m
-
-if __name__ == "__main__":
-    # TODO: Testing Framework
-    top = RegisterFile()
-    async def bench_different(ctx: SimulatorContext):
-        ctx.set(top.rs_re, 1)
-
-
-        ctx.set(top.rs1_addr, 2)
-        await ctx.tick()
-
-        ctx.set(top.rd_addr, 2)
-        ctx.set(top.rd_data, 100)
-        ctx.set(top.rd_we, 1)
-        await ctx.tick()
-
-        ctx.set(top.rd_we, 0)
-
-        await ctx.tick()
-
-
-    sim = Simulator(top)
-    sim.add_clock(1e-6)
-    sim.add_testbench(bench_different)
-    with sim.write_vcd("sim_output/regfile.vcd"):
-        sim.run()
